@@ -1,7 +1,7 @@
 # R code for Example 5.2
 # 5.2 Causal Model from an Atherosclerosis Study
 
-# The clustered graph
+# The clustered graph of Figure 6a
 library(dosearch)
 graph <- "
 l -> h
@@ -72,6 +72,7 @@ dosearch(data5, query3, graph, control = list(heuristic = FALSE))
 # As the plain transit cluster theorem does not apply it is possible 
 # that the query is identifiable in a graph where M is not clustered. 
 # This indeed is the case. The query is identified in a graph where M = (M1, M2). 
+# The graph where cluster M is opened, Figure 6b).
 graph2 <- "
 l -> h
 l -> s

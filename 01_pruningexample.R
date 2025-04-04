@@ -1,6 +1,6 @@
 # R code for the pruning example in Section 3
 
-# The original graph G
+# The original graph G of Figure 3a.
 
 library(dosearch)
 graph <- "
@@ -29,7 +29,7 @@ z6 -> w2
 z7 -> z6
 "
 
-# The pruned graph G'
+# The pruned graph G' of Figure 3b
 
 graph2 <- "
 x1 -> w1
