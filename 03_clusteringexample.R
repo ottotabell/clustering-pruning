@@ -51,7 +51,7 @@ dosearch(data3, query, graph, control = list(heuristic = TRUE))
 # the internal structure of B, H, M and l.
 query2 <- "p(y | do(s))"
 data4 <- "
-p(b, l, y)
+p(h, s, l, y)
 p(b, h, m, s, l)
 "
 dosearch(data4, "p(y | do(s))", graph, control = list(heuristic = FALSE))
