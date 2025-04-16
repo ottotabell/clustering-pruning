@@ -7,6 +7,6 @@ This repository contains the R-codes that were used in obtaining a majority of t
 | File | Description |
 |------|-------------|
 | `01_pruningexample.R` | R code for the pruning example from **Section 3** of the paper. |
-| `02_tobaccoexample.R` | R code for the **Section 5.1** example involving a causal model from an infant mortality study. |
-| `03_clusteringexample.R` | R code for the **Section 5.2** example involving a causal model from an atherosclerosis study. |
+| `02_tobaccoexample.R` | R code for the **Section 6.1** example involving a causal model from an infant mortality study. |
+| `03_clusteringexample.R` | R code for the **Section 6.2** example involving a causal model from an atherosclerosis study. |
 
