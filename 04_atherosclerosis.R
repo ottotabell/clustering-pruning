@@ -1,3 +1,5 @@
+library(dosearch)
+
 # R code for Example of Section 6.2
 # 6.2 Causal Model from an Atherosclerosis Study
 
@@ -18,13 +20,12 @@ m -> y
 
 # 1) Data sources for the first illustration
 data <- "
-p(l, y | b)
-p(b)
+p(l, y, h, s, m | b)
 "
 
 # 2) Data sources for the second illustration (non-id)
 data2 <- "
- p(l, y, m)
+p(l, y, m, h, s, b)
 "
 
 query <- "p(y | do(l))"
@@ -34,33 +35,21 @@ dosearch(data, query, graph, control = list(heuristic = TRUE))
 # 2)
 dosearch(data2, query, graph, control = list(heuristic = TRUE))
 
-# 3) Not identifiable regardless of
-# the internal structure of B, H, and M
-query2 <- "p(y | do(s))"
-data3 <- "
-p(h, s, l, y)
-p(b, h, m, s, l)
-"
-dosearch(data3, "p(y | do(s))", graph, control = list(heuristic = FALSE))
-
-
-# 5) Not identified by do-calculus. Cluster M does not fulfill the 
-# conditions of the plain transit cluster theorem because
-# because H is not present in the first input distribution as required by
-# condition (b).
+# 3) Not identified by do-calculus. Cluster M does not fulfill the 
+# conditions of the transit cluster theorem because
+# because H or L is not present in the first input distribution as is
+# required to achieve the d-separation.
 query3 <- "p(y | do(h))"
 data5 <- "
 p(b, m, s, y)
 p(b, h, m, s)
 "
 dosearch(data5, query3, graph, control = list(heuristic = FALSE))
-# The reason why p(y | do(h)) is not identifiable is the backdoor path
-# via l that is not present in the input distributions.
 
-# As the plain transit cluster theorem does not apply it is possible 
+# 4) As the plain transit cluster theorem does not apply it is possible 
 # that the query is identifiable in a graph where M is not clustered. 
 # This indeed is the case. The query is identified in a graph where M = (M1, M2). 
-# The graph where cluster M is opened, Figure 7b).
+# The graph where cluster M is opened, (Figure 7b).
 graph2 <- "
 l -> h
 l -> s
