@@ -1,6 +1,10 @@
-# R code for Example of Figure 4
+# R codes for Section 4
+
+# Example of Figure 4
 
 library(dosearch)
+
+# Original graph
 
 graph <- "
 x -> r
@@ -21,6 +25,8 @@ t2 -> x
 t1 -> w1
 t2 -> w2
 "
+
+# Clustered graph
 
 graph_clust <- "
 x -> s
@@ -95,7 +101,7 @@ dosearch(data_clust3, query, graph_clust, control = list(heuristic = FALSE))
   p(y, z1, z2)
 "
 
-# Figure 8a
+# Figure 9a
 graph <- "
   w -> x
   w -> y
@@ -109,7 +115,7 @@ data_clust <- "
   p(y, z)
 "
 
-# Figure 8b
+# Figure 9b
 graph_clust <- "
   w -> x
   w -> y
