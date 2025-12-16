@@ -10,7 +10,7 @@ This repository contains the R-codes that were used in obtaining the causal effe
 | `02_clusteringexample.R` | R code for the clustering examples from **Section 4** of the paper. |
 | `03_tobaccoexample.R` | R code for the **Section 7.1** example involving a causal model from an infant mortality study. |
 | `04_atherosclerosis.R` | R code for the **Section 7.2** example involving a causal model from an atherosclerosis study. |
-| simulation | Folder containing the codes for the simulation in **Section 6** |
+| `\simulation` | Folder containing the codes for the simulation in **Section 6** |
 | `01_utils.R` | Helper functions to aid in the simulation. |
 | `02_findtrclust.R` | R implementation of the FindTrClust algorithm by Tikka et al. 2023 |
 | `03_idinvariant.R` | R implementation of VerifyInputs algorithm by Tabell et al. 2025. |
