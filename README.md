@@ -1,6 +1,6 @@
 # Clustering and Pruning in Causal Data Fusion
 
-This repository contains the R-codes that were used in obtaining the causal effect identifying formulas in the paper Clustering and Pruning in Causal Data Fusion (Tabell, Tikka & Karvanen, 2025). The R-package do-search (Tikka et al., 2024) was used in the examples. 
+This repository contains the R-codes that were used for simulation in Section 6, and in obtaining the causal effect identifying formulas in the paper Clustering and Pruning in Causal Data Fusion (Tabell, Tikka & Karvanen, 2025). The R-package do-search (Tikka et al., 2024) was used in the simulation and examples. 
 
 ## Contents
 
