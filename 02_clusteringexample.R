@@ -43,19 +43,34 @@ t -> w1
 query <- "p(y|do(x))"
 
 data1 <- "
+p(x, e1, e2, s1, r)
+p(e1, e2, y, t1, t2)
+"
+
+data_clust1 <- "
+p(x, s)
+p(s, y, t)
+"
+dosearch(data1, query, graph, control = list(heuristic = FALSE))
+dosearch(data_clust1, query, graph_clust, control = list(heuristic = FALSE))
+
+# Case (ii)
+
+
+data1 <- "
 p(x, e1, e2, r, w2)
 p(y, w2| do(w1))
 "
 
 data_clust1 <-"
-p(x, s, w2)
+p(x, s, w1)
 p(y, w2 | do(w1))
 "
 
 dosearch(data1, query, graph, control = list(heuristic = FALSE))
 dosearch(data_clust1, query, graph_clust, control = list(heuristic = FALSE))
 
-# Case (ii)
+# Case (iii)
 
 data2 <- "
 p(e1, e2, x)
@@ -64,7 +79,6 @@ p(x, t1, t2)
 "
 
 data_clust2 <-"
-p(s, x)
 p(y | do(t), s)
 p(x, t)
 "
@@ -72,7 +86,7 @@ p(x, t)
 dosearch(data2, query, graph, control = list(heuristic = FALSE))
 dosearch(data_clust2, query, graph_clust, control = list(heuristic = FALSE))
 
-# Case (iii)
+# Case (iv)
 
 data3 <- "
 p(y, t1, t2, r, e1, e2)
@@ -92,7 +106,7 @@ dosearch(data_clust3, query, graph_clust, control = list(heuristic = FALSE))
 
 ####################################################
 
-# Examples showing the necessity of conditions (a) and (b) in Theorem 15
+# Examples showing the necessity of conditions (a) and (b) in Theorem 18
   
 # Condition (a)
   

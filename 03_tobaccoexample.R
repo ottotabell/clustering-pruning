@@ -1,6 +1,6 @@
 library(dosearch)
 
-# R Code for the demonstrations in Section 6.1
+# R Code for the demonstrations in Section 7.1
 # Causal Model from an Infant Mortality Study
 
 # Variables:
@@ -22,7 +22,7 @@ library(dosearch)
 # q ethnicity
 # j SHS in infancy
 
-# Original graph of Figure 7a
+# Original graph of Figure 9a
 graph <- "
 w -> h
 w -> r
@@ -64,7 +64,7 @@ g -> i
 
 # (i) Causal effect p(s | do(r))
 
-# Pruned graph for the first causal effect p(s | do(r)), Figure 7b.
+# Pruned graph for the first causal effect p(s | do(r)), Figure 9b.
 
 query <- "p(s | do(r))"
 
@@ -96,7 +96,7 @@ res1 <- dosearch(data1, query, graph, control = list(heuristic = FALSE))
 res1pruned <- dosearch(data1, query, graph_pruned2_s_do_r, control = list(heuristic = FALSE))
 # \sum_{c,e,m,o}\left(p(s|do(o),c)\left(p(e,m,o)p(c|r,e,m,o)\right)\right)
 
-# Pruned graph for the second causal effect p(b | do(r)), Figure 7c.
+# Pruned graph for the second causal effect p(b | do(r)), Figure 9c.
 
 query2 <- "p(b | do(r))"
 
@@ -128,7 +128,7 @@ p(g, d, c, s, b| do(o))
 print(res4pruned <- dosearch(data2, query2, graph_pruned_b_do_r, control = list(heuristic = TRUE)))
 # Non-identifiable. Takes a few minutes.
 
-# (iii) Causal effect p(g | do(c)), Figure 5d.
+# (iii) Causal effect p(g | do(c)), Figure 9d.
 
 query3 <- "p(g | do(c))"
 
