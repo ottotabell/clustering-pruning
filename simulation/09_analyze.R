@@ -105,6 +105,12 @@ d %>% mutate(raw_clust_diff = raw_clust_diff / 1000) %>% group_by(size_factor, s
             upper = round(quantile(raw_clust_diff, 0.75), 2),
             n = n()) |> View()
 
+d %>% mutate(raw_clust_prop = raw_timediff / clustering_timediff) %>% group_by(size_factor, setting) %>% 
+  summarise(median = round(median(raw_clust_prop), 2),
+            lower = round(quantile(raw_clust_prop, 0.25), 2),
+            upper = round(quantile(raw_clust_prop, 0.75), 2),
+            n = n()) |> View()
+
 # Box plot of Figure 8
 
 settingC <- ggplot(data = d[d$setting == "non_id_non_idinv", ], mapping = aes(x = size_factor, y = raw_clust_diff / 1000)) +
