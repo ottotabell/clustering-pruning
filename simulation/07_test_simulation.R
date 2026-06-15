@@ -7,7 +7,11 @@ source("05_simulation.R")
 # min_sources = 2; max_sources = 4
 # prob1 = 0.5; prob2 = 0.35; prob3 = 0.5; prob_sources = c(0.35, 0.125, 0.125, 0.40)
 
-sim_result <- simulate_times(500, indicate = 100)
+sim_result <- simulate_times(250, indicate = 10)
+
+sim_result_clust <- simulate_times(250, prune = F)
+
+sim_result_prune <- simulate_times(250, clust = F)
 
 sim_result8 <- sim_result[sim_result$real_dag_size > 7, ]
 
@@ -122,3 +126,5 @@ abline(reg = c(0, 1))
 # 0.1 seconds
 plot(res[, 2], res[, 3], col = factor(res[, 1]), xlim = c(0, 1e+02), ylim = c(0, 1e+02))
 abline(reg = c(0, 1))
+
+

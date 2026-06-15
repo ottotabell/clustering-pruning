@@ -95,8 +95,9 @@ checkidinvariant(fig_9b, c("p(x, z)", "p(y | do(w), z)"), "z")
 set.seed(20252710)
 
 # Simulating a few different sized DAGs
+for (i in 1:1000) {
 {
-  dag1 <- random_dag(4, 4)
+  dag1 <- random_dag(5, 7)
   dag2 <- random_dag(13, 14, prob1 = 0.6, prob2 = 0.6)
   dag3 <- random_dag(5, 9, prob2 = 0.7)
 }
@@ -120,6 +121,16 @@ set.seed(20252710)
   real_d2 <- original_data(real_dag2, d2)
   d3 <- random_data(dag1$graph, real_dag1$clust, prob = c(0.3, 0.1, 0.4, 0.4))
   real_d3 <- original_data(real_dag1, d1)
+}
+
+# Applying pruning
+
+{
+  pruned <- pruning(dag1$graph, real_dag1$graph, d1, real_d1, clustering = F)
+  do4 <- parse_dosearch(pruned[[2]], pruned[[4]])
+  dosearch(do4$data, "p(y|do(x))", do4$graph, control = list(time_limit = 0.001))
+}
+  print (i)
 }
 
 # Parsing to dosearch inputs

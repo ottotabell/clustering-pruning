@@ -10,9 +10,19 @@ children <- function(x, g, v = igraph::V(g)) {
   v[ch_ind]$name
 }
 
+children_lst <- function(x, g, v = igraph::V(g), self = TRUE) {
+  ch <- igraph::neighborhood(g, order = 1, nodes = x, mindist = 1 - self, mode = "out")
+  setNames(lapply(ch, function(i) v[i]$name), v[x]$name)
+}
+
 parents <- function(x, g, v = igraph::V(g)) {
   pa_ind <- unlist(igraph::neighborhood(g, order = 1, nodes = x, mode = "in"))
   v[pa_ind]$name
+}
+
+parents_lst <- function(x, g, v = igraph::V(g), self = TRUE) {
+  pa <- igraph::neighborhood(g, order = 1, nodes = x, mindist = 1 - self, mode = "in")
+  setNames(lapply(pa, function(i) v[i]$name), v[x]$name)
 }
 
 descendants <- function(x, g, v = igraph::V(g)) {
@@ -183,3 +193,74 @@ children_unsrt <- function(node, G) {
   ch <- igraph::V(G)[ch.ind]$name
   return(ch)
 }
+
+# Modifies the graph so that all incoming edges in nodes of vector "inc" and
+# all outgoing edges in nodes of vector "out" are removed.
+modify_dag <- function(graph, inc = NULL, out = NULL) {
+  g <- graph
+  
+  if (!is.null(inc) && length(inc) > 0) {
+    # Remove incoming edges to nodes in inc
+    inc_existing <- intersect(inc, V(g)$name)
+    if (length(inc_existing) > 0) {
+      edges_to_remove <- E(g)[.to(inc_existing)]
+      if (length(edges_to_remove) > 0) {
+        g <- delete_edges(g, edges_to_remove)
+      }
+    }
+  }
+  
+  if (!is.null(out) && length(out) > 0) {
+    # Remove outgoing edges from nodes in out
+    out_existing <- intersect(out, V(g)$name)
+    if (length(out_existing) > 0) {
+      edges_to_remove <- E(g)[.from(out_existing)]
+      if (length(edges_to_remove) > 0) {
+        g <- delete_edges(g, edges_to_remove)
+      }
+    }
+  }
+  
+  return(g)
+}
+
+# D-separation vectorized
+v_dSep <- Vectorize(dSep, vectorize.args = "x")
+
+# Removes the set Z from all elements of list x
+remove_input <- function(x, Z) {
+  if (is.list(x)) {
+    lapply(x, remove_input, Z = Z)
+  } else {
+    setdiff(x, Z)
+  }
+}
+
+dag_string_to_igraph <- function(dag_string) {
+  
+  # Split into individual edge statements
+  edges <- strsplit(dag_string, "\n")[[1]]
+  edges <- trimws(edges)
+  edges <- edges[nzchar(edges)]
+  
+  # Parse "from -> to"
+  edge_df <- do.call(
+    rbind,
+    lapply(edges, function(edge) {
+      parts <- trimws(strsplit(edge, "->", fixed = TRUE)[[1]])
+      
+      if (length(parts) != 2) {
+        stop("Invalid edge specification: ", edge)
+      }
+      
+      data.frame(
+        from = parts[1],
+        to   = parts[2],
+        stringsAsFactors = FALSE
+      )
+    })
+  )
+  
+  graph_from_data_frame(edge_df, directed = TRUE)
+}
+

@@ -3,36 +3,6 @@
 
 source("01_utils.R")
 
-# Modifies the graph so that all incoming edges in nodes of vector "inc" and
-# all outgoing edges in nodes of vector "out" are removed.
-modify_dag <- function(graph, inc = NULL, out = NULL) {
-  g <- graph
-  
-  if (!is.null(inc) && length(inc) > 0) {
-    # Remove incoming edges to nodes in inc
-    inc_existing <- intersect(inc, V(g)$name)
-    if (length(inc_existing) > 0) {
-      edges_to_remove <- E(g)[.to(inc_existing)]
-      if (length(edges_to_remove) > 0) {
-        g <- delete_edges(g, edges_to_remove)
-      }
-    }
-  }
-  
-  if (!is.null(out) && length(out) > 0) {
-    # Remove outgoing edges from nodes in out
-    out_existing <- intersect(out, V(g)$name)
-    if (length(out_existing) > 0) {
-      edges_to_remove <- E(g)[.from(out_existing)]
-      if (length(edges_to_remove) > 0) {
-        g <- delete_edges(g, edges_to_remove)
-      }
-    }
-  }
-  
-  return(g)
-}
-
 # Takes data sources as a vector and returns a list of observed, intervened
 # and conditioned variables
 # For example: extract_variables_by_source(c("p(a|do(b), c)", "p(d, e, f)")) should
@@ -178,3 +148,92 @@ checkidinvariant <- Vectorize(function(graph, sources, clust) {
   # Line 16: Return TRUE if none of the inputs returned FALSE earlier
   return(TRUE)
 }, vectorize.args = "clust")
+
+
+# Completes pruning operations for multiple data sources
+# Inputs:
+# dag = clustered dag
+# real_dag = dag with the transit cluster unclustered
+# d = clustered data source
+# d_real = data source with the transit cluster unclustered
+# Z = the set to be pruned
+# Returns the pruned data sources and inputs
+operate_pruning <- function(dag, real_dag, d, d_real, Z) {
+  if (is.null(Z)) return(list(dag, real_dag, d, d_real))
+  # If the full set A is pruned for one source, it can be removed.
+  # keep contains a truth vector of sources to be kept
+  keep <- !vapply(d_real$obs, function(x) all(x %in% Z), logical(1))
+  real_vars <- V(real_dag)$name
+  vars <- V(dag)$name
+  # Pruned subgraphs 
+  new_real_dag <- induced_subgraph(real_dag, setdiff(real_vars, Z))
+  new_dag <- induced_subgraph(dag, setdiff(vars, Z))
+  new_d <- d
+  new_d_real <- d_real
+  if (any(!keep)) {
+    new_d <- lapply(d, function(x) x[keep])
+    new_d_real <- lapply(d_real, function(x) x[keep])
+  }
+  new_d <- remove_input(new_d, Z)
+  new_d_real <- remove_input(new_d_real, Z)
+  return(list(new_dag, new_real_dag, new_d, new_d_real))
+}
+
+# Pruning for Theorems 7-9 in Clustering and Pruning in Causal Data Fusinon (Tabell et al.)
+# Inputs:
+# dag = clustered dag
+# real_dag = dag with the transit cluster unclustered
+# d = clustered data source
+# d_real = data source with the transit cluster unclustered
+# clustering = whether clustering is also to be executed
+# thm1 = whether pruning Theorem 7 is assessed (non-ancestors of response)
+# thm2 = whether pruning Theorem 8 is assessed (non-ancestors of response after intervention)
+# thm3 = whether pruning Theorem 9 is assessed (isolated vertices)
+pruning <- function(dag, real_dag, d, d_real, clustering = T, thm1 = T, thm2 = T, thm3 = T) {
+  vars <- V(real_dag)$name
+  tclust <- NULL
+  if (clustering) tclust <- setdiff(vars, V(dag)$name)
+  prune <- NULL
+  if (thm1) {
+    nonanc <- setdiff(vars, ancestors("y", real_dag))
+    if ("x" %in% nonanc) nonanc <- NULL
+    if (any(nonanc %in% unique(uu(d_real$do_real), uu(d_real$cond_real)))) nonanc <- NULL
+    prune <- nonanc
+  }
+  
+  pruned <- operate_pruning(dag, real_dag, d, d_real, prune)
+  prune <- NULL
+  
+  if (thm2) {
+    xanc <- setdiff(ancestors("x", pruned[[2]]), "x")
+    Z <- NULL
+    if (length(xanc)) {
+      Z <- xanc[v_dSep(pruned[[2]], xanc, "y")]
+      if (length(intersect(Z, descendants("x", pruned[[2]]))) == 0) Z <- NULL
+      if (any(Z %in% unique(uu(pruned[[4]]$do_real), uu(pruned[[4]]$cond_real)))) Z <- NULL
+      if (length(intersect(Z, c("x", "y", tclust)))) Z <- NULL
+      prune <- Z
+    }
+  }
+  
+  pruned <- operate_pruning(pruned[[1]], pruned[[2]], pruned[[3]], pruned[[4]], prune)
+  
+  if (thm3) {
+    ch <- children_lst(V(pruned[[2]])$name, pruned[[2]], self = FALSE)
+    nms <- names(ch)
+    for (i in 1:length(ch)) {
+      if (length(ch[[i]]) != 1) next
+      if (!nms[i] %in% V(pruned[[2]])$name) next
+      cut_dag <- modify_dag(real_dag, NULL, nms[i])
+      comp <- components(cut_dag)
+      v_comp <- comp$membership[V(cut_dag)[name == nms[i]]]
+      Z <- V(cut_dag)[comp$membership == v_comp]
+      Z <- names(Z)
+      if (length(intersect(Z, c("x", "y", tclust)))) Z <- NULL
+      if (any(Z %in% unique(uu(pruned[[4]]$do_real), uu(pruned[[4]]$cond_real)))) Z <- NULL
+      pruned <- operate_pruning(pruned[[1]], pruned[[2]], pruned[[3]], pruned[[4]], Z)
+    }
+  }
+  return(pruned)
+}
+

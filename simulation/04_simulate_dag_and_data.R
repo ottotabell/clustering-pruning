@@ -13,7 +13,7 @@ source("01_utils.R")
 # Returns:
 # graph = igraph graph
 # order = all variables in topological order
-random_dag <- function(n_min = 5, n_max = 8, prob1 = 0.5, prob2 = 0.35) {
+random_dag <- function(n_min = 5, n_max = 8, prob1 = 0.5, prob2 = 0.35, pruning = F) {
   
   if (n_min < 3) {
     stop("n_min must be at least 3")
@@ -122,6 +122,15 @@ random_dag <- function(n_min = 5, n_max = 8, prob1 = 0.5, prob2 = 0.35) {
   
   # Rebuild final DAG with all edges
   edges <- cbind(v, w)
+  
+  # If pruning is to be executed, create randomly one to two children of y
+  if (pruning == TRUE) {
+    edges <- rbind(edges, c("y", "zz1"))
+    if (runif(1) > 0.5) {
+      edges <- rbind(edges, c("y", "zz2"))
+    }
+  }
+  
   dag <- graph_from_edgelist(edges, directed = TRUE)
   
   return(list(graph = dag, order = vars))
@@ -369,11 +378,20 @@ igraph_to_dosearch <- function(g) {
 }
 
 # Parses a dag and data sources compatible with dosearch
-parse_dosearch <- function(dag, data) {
+parse_dosearch <- function(dag, data, newname = F) {
   o <- data$obs
   d <- data$do
   c <- data$cond
+  if (newname) {
+    o <- data$observed
+    d <- data$intervened
+    c <- data$conditioned
+  }
   exprs <- mapply(function(o, d, c) {
+    o <- o[o != ""]
+    d <- d[d != ""]
+    c <- c[c != ""]
+    
     o_part <- paste(o, collapse = ", ")
     do_part <- if (length(d) > 0) paste0("do(", paste(d, collapse = ", "), ")") else NULL
     c_part <- if (length(c) > 0) paste(c, collapse = ", ") else NULL
