@@ -14,21 +14,31 @@ library(tidyverse)
 
 # d <- combined_simulation_results[combined_simulation_results$new_setting != "timeout", ]
 d <- readRDS("clustering.rds")
-d <- combined_simulation_results[combined_simulation_results$setting == "timeout", "raw_diff"] <- 900000
-
-# Two observations with unrealistically high running times. To be removed?
-d <- d[!(d$real_dag_size == 6 & d$clustering_timediff > 2000), ]
-d <- d[!(d$real_dag_size == 10 & d$clustering_timediff > 40000 & d$setting != "non_id_non_idinv"), ]
+d[d$setting == "timeout", "raw_timediff"] <- 900000
+d$new_setting <- as.factor(d$new_setting)
+levels(d$new_setting) <- c("A", "B", "D", "A", "B", "D")
 
 d$raw_clust_diff <- d$raw_timediff - d$clustering_timediff
 d$size_factor <- as.factor(d$real_dag_size)
+
+settingC <- ggplot(data = d[d$new_setting == "D", ], mapping = aes(x = size_factor, y = raw_clust_diff / 1000)) +
+  geom_boxplot(outliers = FALSE) +
+  labs(x = "Original graph size", y = "Difference in running time (s)") +
+  theme_bw()
+
+ggsave(
+  "../../paper/plots/settingC_clustering.pdf",
+  settingC,
+  width  = 0.90 * 6.5,
+  height = 0.40 * 6.5
+)
 
 # Turn into a LaTeX table
 
 summary_df <- d %>%
   mutate(
     raw_clust_diff  = raw_clust_diff / 1000,
-    raw_clust_ratio = raw_timediff / new_timediff,
+    raw_clust_ratio = raw_timediff / clustering_timediff,
     setting = new_setting
   ) %>%
   filter(real_dag_size < 14) %>%
@@ -126,3 +136,83 @@ cat(paste(latex_table, collapse = "\n"))
 
 # Or write to a .tex file
 writeLines(latex_table, "table_simresults.tex")
+
+# Scatter plots
+
+base_plot <- function(df, lim) {
+  ind <- sample(1:nrow(df), size = 500, replace = F)
+  new_df <- df[ind, ]
+  ggplot(
+    data = new_df,
+    aes(
+      x = raw_timediff / 1000,
+      y = clustering_timediff / 1000,
+      col = new_setting
+    )
+  ) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0) +
+    scale_x_continuous(limits = c(0, lim)) +
+    scale_y_continuous(limits = c(0, lim)) +
+    scale_color_manual(
+      values = c("black", "#E69F00", "#56B4E9", "#51914e"),
+      name = "Setting",
+      labels = c("1", "2", "3", "4")
+    ) +
+    labs(
+      x = "Direct strategy (s)",
+      y = "Reduction strategy (s)"
+    ) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5))
+}
+
+# filter once
+d_use <- d[
+  d$real_dag_size %in% c(7, 8, 10, 12) &
+    d$new_setting != "D",
+]
+
+set.seed(260616)
+
+# individual panels
+p7  <- base_plot(subset(d_use, size_factor == 7),  lim = 0.6)
+
+p8  <- base_plot(subset(d_use, size_factor == 8),  lim = 4.5)
+
+p10 <- base_plot(subset(d_use, size_factor == 10), lim = 200)
+
+p12 <- base_plot(subset(d_use, size_factor == 12), lim = 901)
+
+ggsave(
+  "../../paper/plots/scatter7_cl.pdf",
+  p7,
+  width  = 0.525 * 6.5,  # 6.5in ≈ LaTeX textwidth
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+ggsave(
+  "../../paper/plots/scatter8_cl.pdf",
+  p8,
+  width  = 0.525 * 6.5,
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+ggsave(
+  "../../paper/plots/scatter10_cl.pdf",
+  p10,
+  width  = 0.525 * 6.5,  # 6.5in ≈ LaTeX textwidth
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+ggsave(
+  "../../paper/plots/scatter12_cl.pdf",
+  p12,
+  width  = 0.525 * 6.5,
+  height = 0.525 * 6.5,
+  units  = "in"
+)

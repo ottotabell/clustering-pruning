@@ -14,14 +14,16 @@ library(tidyverse)
 
 d <- readRDS("clustering_pruning.rds")
 
-d$raw_clust_diff <- d$raw_timediff - d$reduced_timediff
+d$raw_clust_diff <- d$raw_timediff - d$new_timediff
 d$size_factor <- as.factor(d$real_dag_size)
 
 # Scatter plots of Figure 7
 
 base_plot <- function(df, lim) {
+  ind <- sample(1:nrow(df), 500, replace = F)
+  new_df <- df[ind, ]
   ggplot(
-    data = df,
+    data = new_df,
     aes(
       x = raw_timediff / 1000,
       y = new_timediff / 1000,
@@ -48,20 +50,22 @@ base_plot <- function(df, lim) {
 
 # filter once
 d_use <- d[
-  d$real_dag_size %in% c(7, 8, 9, 10) &
-    d$setting != "D",
+  d$real_dag_size %in% c(7, 8, 10, 12) &
+    (d$new_setting %in% c("A", "B")),
 ]
 
+set.seed(20260616)
+
 # individual panels
-p7  <- base_plot(subset(d_use, size_factor == 7),  lim = 0.55)
+p7  <- base_plot(subset(d_use, size_factor == 7),  lim = 0.5)
 
-p8  <- base_plot(subset(d_use, size_factor == 8),  lim = 6)
+p8  <- base_plot(subset(d_use, size_factor == 8),  lim = 4.5)
 
-p9 <- base_plot(subset(d_use, size_factor == 9), lim = 45)
+p10 <- base_plot(subset(d_use, size_factor == 10), lim = 300)
 
-p10 <- base_plot(subset(d_use, size_factor == 10), lim = 375)
+p12 <- base_plot(subset(d_use, size_factor == 12), lim = 900)
 
-pggsave(
+ggsave(
   "../../paper/plots/scatter7.pdf",
   p7,
   width  = 0.525 * 6.5,  # 6.5in ≈ LaTeX textwidth
@@ -70,47 +74,28 @@ pggsave(
 )
 
 ggsave(
-  "../../paper/plots/scatter9.pdf",
-  p9,
+  "../../paper/plots/scatter8.pdf",
+  p8,
   width  = 0.525 * 6.5,
   height = 0.525 * 6.5,
   units  = "in"
 )
 
 ggsave(
-  "../../paper/plots/scatter11.pdf",
-  p11,
+  "../../paper/plots/scatter10.pdf",
+  p10,
   width  = 0.525 * 6.5,  # 6.5in ≈ LaTeX textwidth
   height = 0.525 * 6.5,
   units  = "in"
 )
 
 ggsave(
-  "../../paper/plots/scatter13.pdf",
-  p13,
+  "../../paper/plots/scatter12.pdf",
+  p12,
   width  = 0.525 * 6.5,
   height = 0.525 * 6.5,
   units  = "in"
 )
-
-# Table 1
-
-d %>% mutate(raw_clust_diff = raw_clust_diff / 1000, raw_clust_ratio = raw_timediff / reduced_timediff) %>% 
-  filter(real_dag_size < 14) %>%
-  group_by(size_factor, setting) %>% 
-  summarise(median_diff = round(median(raw_clust_diff), 2),
-            lower_diff = round(quantile(raw_clust_diff, 0.25), 2),
-            upper_diff = round(quantile(raw_clust_diff, 0.75), 2),
-            median_ratio = round(median(raw_clust_ratio), 2),
-            lower_ratio = round(quantile(raw_clust_ratio, 0.25), 2),
-            upper_ratio = round(quantile(raw_clust_ratio, 0.75), 2),
-            n = n()) |> View()
-
-d %>% mutate(raw_clust_prop = raw_timediff / clustering_timediff) %>% group_by(size_factor, setting) %>% 
-  summarise(median = round(median(raw_clust_prop), 2),
-            lower = round(quantile(raw_clust_prop, 0.25), 2),
-            upper = round(quantile(raw_clust_prop, 0.75), 2),
-            n = n()) |> View()
 
 # Box plot of Figure 8
 
@@ -120,7 +105,7 @@ settingC <- ggplot(data = d[d$setting == "D" & d$size_factor != "14", ], mapping
   theme_bw()
 
 ggsave(
-  "plots/settingC.pdf",
+  "../../plots/settingC.pdf",
   settingC
 )
 
@@ -132,7 +117,7 @@ summary_df <- d %>%
     raw_clust_ratio = raw_timediff / new_timediff,
     setting = new_setting
   ) %>%
-  filter(real_dag_size < 14) %>%
+  filter(real_dag_size < 14, setting != "C") %>%
   group_by(size_factor, setting) %>%
   summarise(
     median_diff  = round(median(raw_clust_diff), 2),
@@ -175,6 +160,81 @@ fmt_iqr_ratio <- function(lo, hi) {
   hi_s <- formatC(hi, format = "f", digits = 2)
   paste0("$(", lo_s, ",\\ ", hi_s, ")$")
 }
+
+# Build the table body rows
+rows <- apply(summary_df, 1, function(r) {
+  size        <- r[["size_factor"]]
+  setting     <- r[["setting"]]
+  med_diff    <- as.numeric(r[["median_diff"]])
+  lo_diff     <- as.numeric(r[["lower_diff"]])
+  hi_diff     <- as.numeric(r[["upper_diff"]])
+  med_ratio   <- as.numeric(r[["median_ratio"]])
+  lo_ratio    <- as.numeric(r[["lower_ratio"]])
+  hi_ratio    <- as.numeric(r[["upper_ratio"]])
+  n_val       <- as.integer(r[["n"]])
+  
+  paste(
+    size, "&", setting, "&",
+    fmt_diff(med_diff), "&", fmt_iqr_diff(lo_diff, hi_diff), "&",
+    fmt_ratio(med_ratio), "&", fmt_iqr_ratio(lo_ratio, hi_ratio), "&",
+    fmt_n(n_val),
+    "\\\\"
+  )
+})
+
+# Assemble the full table
+caption <- paste0(
+  "Median differences (in seconds) of running times between the unclustered and clustered strategies, ",
+  "and median ratios (the running time for the unclustered strategy divided by the running time of the ",
+  "clustered strategy). The interquartile ranges (IQR) are included in parentheses. The number of ",
+  "instances for each graph size and setting is denoted by $N$ ",
+  "(A: identifiable in the clustered graph, B: non-identifiable in the clustered graph but identification ",
+  "invariant, C: non-identifiable in the clustered graph and not identification invariant)."
+)
+
+latex_table <- c(
+  "\\begin{table}[ht]",
+  "\\centering",
+  "\\begin{tabular}{c c r l r l r}",
+  "\\toprule",
+  "Graph size & Setting & \\multicolumn{2}{c}{Median difference (IQR)} & \\multicolumn{2}{c}{Median ratio (IQR)} & $N$ \\\\",
+  "\\midrule",
+  rows,
+  "\\bottomrule",
+  "\\end{tabular}",
+  paste0("\\caption{", caption, "}"),
+  "\\label{tab:simresults}",
+  "\\end{table}"
+)
+
+# Print to console
+cat(paste(latex_table, collapse = "\n"))
+
+# Or write to a .tex file
+writeLines(latex_table, "table_simresults.tex")
+
+# Table for setting D
+
+# Turn into a LaTeX table
+
+summary_df <- d %>%
+  mutate(
+    raw_clust_diff  = raw_clust_diff / 1000,
+    raw_clust_ratio = raw_timediff / new_timediff,
+    setting = new_setting
+  ) %>%
+  filter(real_dag_size < 14, setting == "C") %>%
+  group_by(size_factor, setting) %>%
+  summarise(
+    median_diff  = round(median(raw_clust_diff), 2),
+    lower_diff   = round(quantile(raw_clust_diff, 0.25), 2),
+    upper_diff   = round(quantile(raw_clust_diff, 0.75), 2),
+    median_ratio = round(median(raw_clust_ratio), 2),
+    lower_ratio  = round(quantile(raw_clust_ratio, 0.25), 2),
+    upper_ratio  = round(quantile(raw_clust_ratio, 0.75), 2),
+    n            = n(),
+    .groups      = "drop"
+  )
 
 # Build the table body rows
 rows <- apply(summary_df, 1, function(r) {

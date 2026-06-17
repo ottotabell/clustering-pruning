@@ -119,3 +119,93 @@ cat(paste(latex_table, collapse = "\n"))
 
 # Or write to a .tex file
 writeLines(latex_table, "table_simresults.tex")
+
+# Scatter plots
+
+base_plot <- function(df, lim) {
+  ind <- sample(1:nrow(df), size = 500, replace = F)
+  new_df <- df[ind, ]
+  ggplot(
+    data = new_df,
+    aes(
+      x = raw_timediff / 1000,
+      y = new_timediff / 1000,
+      col = new_setting
+    )
+  ) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0) +
+    scale_x_continuous(limits = c(0, lim)) +
+    scale_y_continuous(limits = c(0, lim)) +
+    scale_color_manual(
+      values = c("black", "#E69F00", "#56B4E9", "#51914e"),
+      name = "Setting",
+      labels = c("1", "2", "3", "4")
+    ) +
+    labs(
+      x = "Direct strategy (s)",
+      y = "Reduction strategy (s)"
+    ) +
+    theme_bw() +
+    theme(legend.position = "none",
+          plot.title = element_text(hjust = 0.5))
+}
+
+# filter once
+d_use <- d[
+  d$real_dag_size %in% c(7, 8, 10, 12) &
+    d$new_setting != "D",
+]
+
+set.seed(260616)
+
+# individual panels
+p7  <- base_plot(subset(d_use, size_factor == 7),  lim = 0.75)
+
+p8  <- base_plot(subset(d_use, size_factor == 8),  lim = 4)
+
+p10 <- base_plot(subset(d_use, size_factor == 10), lim = 250)
+
+p12 <- base_plot(subset(d_use, size_factor == 12), lim = 901)
+
+ggsave(
+  "../../paper/plots/scatter7_pruning.pdf",
+  p7,
+  width  = 0.525 * 6.5,  # 6.5in ≈ LaTeX textwidth
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+ggsave(
+  "../../paper/plots/scatter8_pruning.pdf",
+  p8,
+  width  = 0.525 * 6.5,
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+ggsave(
+  "../../paper/plots/scatter10_pruning.pdf",
+  p10,
+  width  = 0.525 * 6.5,  # 6.5in ≈ LaTeX textwidth
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+ggsave(
+  "../../paper/plots/scatter12_pruning.pdf",
+  p12,
+  width  = 0.525 * 6.5,
+  height = 0.525 * 6.5,
+  units  = "in"
+)
+
+settingC <- ggplot(data = d[d$setting == "D" & d$size_factor != "14", ], mapping = aes(x = size_factor, y = raw_clust_diff / 1000)) +
+  geom_boxplot(outliers = FALSE) +
+  labs(x = "Original graph size", y = "Difference in running time (s)") +
+  theme_bw()
+
+ggsave(
+  "../../plots/settingC_pruning.pdf",
+  settingC
+)
